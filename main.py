@@ -5,7 +5,12 @@ from database import SessionLocal
 from models import User, Department
 from schemas import UserCreate, UserLogin, DepartmentCreate, DepartmentResponse
 from security import hash_password, verify_password, create_access_token, verify_access_token
-
+from fastapi import FastAPI, Depends, HTTPException, Header
+from sqlalchemy.orm import Session
+from database import SessionLocal
+from models import Competency, User
+from schemas import CompetencyCreate, CompetencyResponse
+from security import verify_access_token
 app = FastAPI()
 
 # Dependency for database session
@@ -67,7 +72,7 @@ def login(user: UserLogin, db: Session = Depends(get_db)):
 
 # Protected Route (Requires Authentication)
 @app.get("/me")
-def get_current_user(authorization: str = Header(None)):
+def get_current_user(authorization: str = Header(None), db: Session = Depends(get_db)):
     if not authorization:
         raise HTTPException(status_code=401, detail="Token missing")
 
@@ -77,4 +82,56 @@ def get_current_user(authorization: str = Header(None)):
     if not payload:
         raise HTTPException(status_code=401, detail="Invalid token")
 
-    return {"username": payload["sub"], "role": payload["role"]}
+    user = db.query(User).filter(User.username == payload["sub"]).first()
+    if not user:
+        raise HTTPException(status_code=401, detail="User not found")
+
+    return {"id": user.id, "username": user.username, "role": user.role}  #
+
+# HR: Create Competency
+@app.post("/competencies", response_model=CompetencyResponse)
+def create_competency(competency: CompetencyCreate, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    if current_user["role"] != "HR":
+        raise HTTPException(status_code=403, detail="Only HR can create competencies")
+
+    new_competency = Competency(code=competency.code, name=competency.name)
+    db.add(new_competency)
+    db.commit()
+    db.refresh(new_competency)
+
+    return new_competency
+
+# HR: Edit Competency
+@app.put("/competencies/{competency_id}", response_model=CompetencyResponse)
+def update_competency(competency_id: int, competency_data: CompetencyCreate, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    if current_user["role"]!= "HR":
+        raise HTTPException(status_code=403, detail="Only HR can edit competencies")
+
+    competency = db.query(Competency).filter(Competency.id == competency_id).first()
+    if not competency:
+        raise HTTPException(status_code=404, detail="Competency not found")
+
+    competency.code = competency_data.code  
+    competency.name = competency_data.name
+    db.commit()
+    db.refresh(competency)
+
+    return competency
+
+# HR: Delete Competency
+@app.delete("/competencies/{competency_id}")
+def delete_competency(competency_id: int, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    if current_user["role"] != "HR":
+        raise HTTPException(status_code=403, detail="Only HR can delete competencies")
+
+    competency = db.query(Competency).filter(Competency.id == competency_id).first()
+    if not competency:
+        raise HTTPException(status_code=404, detail="Competency not found")
+
+    db.delete(competency)
+    db.commit()
+
+    return {"message": "Competency deleted successfully"}
+@app.get("/competencies", response_model=list[CompetencyResponse])
+def get_competencies(db: Session = Depends(get_db)):
+    return db.query(Competency).all()

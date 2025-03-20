@@ -18,3 +18,14 @@ class UserCreate(BaseModel):
 class UserLogin(BaseModel):
     username: str
     password: str
+class CompetencyCreate(BaseModel):
+    code: str
+    name: str
+
+class CompetencyResponse(BaseModel):
+    id: int
+    code: str
+    name: str
+
+    class Config:
+        orm_mode = True

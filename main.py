@@ -1,8 +1,8 @@
 from fastapi import FastAPI, Depends, HTTPException, Header
 from sqlalchemy.orm import Session
-from datetime import timedelta
+from datetime import datetime, timedelta
 from database import SessionLocal
-from models import User, Department
+from models import EvaluationStatus, User, Department
 from schemas import UserCreate, UserLogin, DepartmentCreate, DepartmentResponse
 from security import hash_password, verify_password, create_access_token, verify_access_token
 from fastapi import FastAPI, Depends, HTTPException, Header

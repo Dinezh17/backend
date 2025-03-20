@@ -17,9 +17,17 @@ from database import SessionLocal
 from models import Employee, EmployeeCompetency, Department
 from schemas import EmployeeCreate, EmployeeUpdate, EmployeeResponse, EmployeeWithCompetencies, EmployeeCompetencyCreate
 from typing import List, Optional
+from fastapi.middleware.cors import CORSMiddleware
 
 app = FastAPI()
 
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:5173"],  # Allow your frontend origin
+    allow_credentials=True,
+    allow_methods=["*"],  # Allow all methods (GET, POST, etc.)
+    allow_headers=["*"],  # Allow all headers
+)
 # Dependency for database session
 def get_db():
     db = SessionLocal()
@@ -174,20 +182,27 @@ def get_departments(db: Session = Depends(get_db)):
 # Register User
 @app.post("/register")
 def register(user: UserCreate, db: Session = Depends(get_db)):
+    # Check if the username already exists
     existing_user = db.query(User).filter(User.username == user.username).first()
     if existing_user:
         raise HTTPException(status_code=400, detail="Username already exists")
-    
-    department = db.query(Department).filter(Department.id == user.department_id).first()
-    if not department:
-        raise HTTPException(status_code=400, detail="Invalid department ID")
 
+    # Hash the password
     hashed_password = hash_password(user.password)
-    new_user = User(username=user.username, hashed_password=hashed_password, role=user.role, department_id=user.department_id)
+
+    # Create the new user
+    new_user = User(
+        username=user.username,
+        hashed_password=hashed_password,
+        role=user.role,
+        department_name=user.department_name  # Use department_name here
+    )
+
+    # Add the user to the database
     db.add(new_user)
     db.commit()
     db.refresh(new_user)
-    
+
     return {"message": "User registered successfully"}
 
 # User Login (JWT Authentication)

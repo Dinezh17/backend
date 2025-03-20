@@ -49,7 +49,7 @@ class UserCreate(BaseModel):
     username: str
     password: str
     role: str  # HR or HOD
-    department_id: int
+    department_name: str  # Keep this as a string
 
 class UserLogin(BaseModel):
     username: str

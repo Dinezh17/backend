@@ -28,7 +28,8 @@ class Employee(Base):
     evaluation_status = Column(Enum(EvaluationStatus), default=EvaluationStatus.PENDING, nullable=False)
     last_evaluated_date = Column(DateTime, nullable=True)
 
-    department = relationship("Department", back_populates="employees")
+    # Relationships
+    department = relationship("Department", back_populates="employees")  # Ensure this matches
     competencies = relationship("EmployeeCompetency", back_populates="employee")
 
 class EmployeeCompetency(Base):
@@ -62,7 +63,8 @@ class Department(Base):
     id = Column(Integer, primary_key=True, index=True)
     name = Column(String, unique=True, nullable=False)
 
-    users = relationship("User", back_populates="department")
+ 
+    employees = relationship("Employee", back_populates="department")  # Add this line
 
 class User(Base):
     __tablename__ = "users"
@@ -71,6 +73,6 @@ class User(Base):
     username = Column(String, unique=True, index=True, nullable=False)
     hashed_password = Column(String, nullable=False)
     role = Column(String, nullable=False)  # 'HR' or 'HOD'
-    department_id = Column(Integer, ForeignKey("departments.id"))
+    department_name = Column(String, nullable=False)  # Change this to a string
 
-    department = relationship("Department", back_populates="users")
+    

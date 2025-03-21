@@ -261,9 +261,12 @@ def delete_competency(competency_id: int, current_user: User = Depends(get_curre
     db.commit()
 
     return {"message": "Competency deleted successfully"}
+
 @app.get("/competencies", response_model=list[CompetencyResponse])
 def get_competencies(db: Session = Depends(get_db)):
     return db.query(Competency).all()
+
+    
 @app.put("/employees/evaluation-status")
 def update_evaluation_status(
     employee_ids: List[int], 

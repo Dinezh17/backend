@@ -412,3 +412,8 @@ def update_competency_scores(
     
     db.commit()
     return {"message": "Competency scores updated successfully"}
+
+@app.get("/employee-competencies")
+def get_employee_competencies(db: Session = Depends(get_db)):
+    competencies = db.query(EmployeeCompetency).all()
+    return competencies
